@@ -1,5 +1,6 @@
 #!/bin/bash
 mkdir -p mail/{new,cur,tmp}
+mkdir backup
 
 declare -A failed
 while read line ; do
