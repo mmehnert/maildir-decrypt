@@ -1,0 +1,35 @@
+#!/bin/bash
+mkdir -p mail/{new,cur,tmp}
+
+declare -A failed
+while read line ; do
+    failed["$line"]="x"
+done < failed.txt
+declare -A  success
+while read line ; do
+    success["$line"]="x"
+done < success.txt
+
+for file in `notmuch search --output=files tag:encrypted or "-----BEGIN PGP MESSAGE-----"` ; do
+  if [ -n "${failed[$file]}" ]; then
+    echo "$file already failed"
+    continue
+  fi
+  if [ -n "${success[$file]}" ]; then
+    echo "$file already succeeded"
+    continue
+  fi
+  echo ">> at ${file}:"
+  ./decrypt-email.pl < "$file" >tmp.eml 
+  if [ $? -eq 0 ]; then
+    echo moving
+    echo ${file} >>success.txt
+    cp -v ${file} backup/
+    mv -v tmp.eml ${file};
+#    mv -v tmp.eml mail/new/`basename ${file}`;
+  else
+    echo ${file} >>failed.txt
+    echo "${file} could not be decrypted, skipping"
+  fi
+done
+
